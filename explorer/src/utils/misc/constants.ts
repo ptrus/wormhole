@@ -7,14 +7,16 @@ export interface ChainIDs {
     "ethereum": 2,
     "terra": 3,
     "bsc": 4,
-    "polygon": 5
+    "polygon": 5,
+    "oasis": 6
 }
 export const chainIDs: ChainIDs = {
     "solana": 1,
     "ethereum": 2,
     "terra": 3,
     "bsc": 4,
-    "polygon": 5
+    "polygon": 5,
+    "oasis": 6
 }
 
 export enum ChainID {
@@ -100,6 +102,7 @@ const getEmitterAddress: { [chainName: string]: (address: string) => Promise<str
     "terra": getEmitterAddressTerra,
     "bsc": getEmitterAddressEVM,
     "polygon": getEmitterAddressEVM,
+    "oasis": getEmitterAddressEVM
 }
 
 // the keys used for creating the map of contract addresses of each chain, on each network.

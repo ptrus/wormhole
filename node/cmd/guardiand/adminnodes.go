@@ -3,22 +3,21 @@ package guardiand
 import (
 	"context"
 	"fmt"
-	publicrpcv1 "github.com/certusone/wormhole/node/pkg/proto/publicrpc/v1"
-	"github.com/certusone/wormhole/node/pkg/vaa"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"sort"
 	"text/tabwriter"
 	"time"
+
+	publicrpcv1 "github.com/certusone/wormhole/node/pkg/proto/publicrpc/v1"
+	"github.com/certusone/wormhole/node/pkg/vaa"
+	"github.com/spf13/cobra"
 )
 
 // How to test in container:
 //    kubectl exec guardian-0 -- /guardiand admin list-nodes --socket /tmp/admin.sock
 
-var (
-	showDetails bool
-)
+var showDetails bool
 
 func init() {
 	AdminClientListNodes.Flags().BoolVar(&showDetails, "showDetails", false, "Show error counter and contract addresses")
@@ -65,9 +64,9 @@ func runListNodes(cmd *cobra.Command, args []string) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
 
 	if showDetails {
-		_, _ = w.Write([]byte("Node key\tGuardian key\tNode name\tVersion\tLast seen\tUptime\tSolana\tEthereum\tTerra\tBSC\tPolygon\n"))
+		_, _ = w.Write([]byte("Node key\tGuardian key\tNode name\tVersion\tLast seen\tUptime\tSolana\tEthereum\tTerra\tBSC\tPolygon\tOasis\n"))
 	} else {
-		_, _ = w.Write([]byte("Node key\tGuardian key\tNode name\tVersion\tLast seen\tSolana\tEthereum\tTerra\tBSC\tPolygon\n"))
+		_, _ = w.Write([]byte("Node key\tGuardian key\tNode name\tVersion\tLast seen\tSolana\tEthereum\tTerra\tBSC\tPolygon\tOasis\n"))
 	}
 
 	for _, h := range nodes {
@@ -93,7 +92,7 @@ func runListNodes(cmd *cobra.Command, args []string) {
 
 		if showDetails {
 			fmt.Fprintf(w,
-				"%s\t%s\t%s\t%s\t%s\t%s\t%s %d (%d)\t%s %d (%d)\t%s %d (%d)\t%s %d (%d)\t%s %d (%d)\n",
+				"%s\t%s\t%s\t%s\t%s\t%s\t%s %d (%d)\t%s %d (%d)\t%s %d (%d)\t%s %d (%d)\t%s %d (%d)\t%s %d (%d)\n",
 				h.P2PNodeAddr,
 				h.RawHeartbeat.GuardianAddr,
 				h.RawHeartbeat.NodeName,
@@ -115,10 +114,13 @@ func runListNodes(cmd *cobra.Command, args []string) {
 				truncAddrs[vaa.ChainIDPolygon],
 				heights[vaa.ChainIDPolygon],
 				errors[vaa.ChainIDPolygon],
+				truncAddrs[vaa.ChainIDOasis],
+				heights[vaa.ChainIDOasis],
+				errors[vaa.ChainIDOasis],
 			)
 		} else {
 			fmt.Fprintf(w,
-				"%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\n",
+				"%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n",
 				h.P2PNodeAddr,
 				h.RawHeartbeat.GuardianAddr,
 				h.RawHeartbeat.NodeName,
@@ -129,6 +131,7 @@ func runListNodes(cmd *cobra.Command, args []string) {
 				heights[vaa.ChainIDTerra],
 				heights[vaa.ChainIDBSC],
 				heights[vaa.ChainIDPolygon],
+				heights[vaa.ChainIDOasis],
 			)
 		}
 	}

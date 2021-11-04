@@ -3,7 +3,6 @@ package guardiand
 import (
 	"context"
 	"fmt"
-	"github.com/certusone/wormhole/node/pkg/notify/discord"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -11,6 +10,8 @@ import (
 	"path"
 	"strings"
 	"syscall"
+
+	"github.com/certusone/wormhole/node/pkg/notify/discord"
 
 	"github.com/certusone/wormhole/node/pkg/db"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -69,6 +70,9 @@ var (
 	polygonRPC      *string
 	polygonContract *string
 
+	oasisRPC      *string
+	oasisContract *string
+
 	terraWS       *string
 	terraLCD      *string
 	terraContract *string
@@ -124,6 +128,9 @@ func init() {
 
 	polygonRPC = NodeCmd.Flags().String("polygonRPC", "", "Polygon RPC URL")
 	polygonContract = NodeCmd.Flags().String("polygonContract", "", "Polygon contract address")
+
+	oasisRPC = NodeCmd.Flags().String("oasisRPC", "", "Oasis RPC URL")
+	oasisContract = NodeCmd.Flags().String("oasisContract", "", "Oasis contract address")
 
 	terraWS = NodeCmd.Flags().String("terraWS", "", "Path to terrad root for websocket connection")
 	terraLCD = NodeCmd.Flags().String("terraLCD", "", "Path to LCD service root for http calls")
@@ -289,6 +296,7 @@ func runNode(cmd *cobra.Command, args []string) {
 		*ethContract = devnet.GanacheWormholeContractAddress.Hex()
 		*bscContract = devnet.GanacheWormholeContractAddress.Hex()
 		*polygonContract = devnet.GanacheWormholeContractAddress.Hex()
+		*oasisContract = devnet.GanacheWormholeContractAddress.Hex()
 
 		// Use the hostname as nodeName. For production, we don't want to do this to
 		// prevent accidentally leaking sensitive hostnames.
@@ -330,6 +338,12 @@ func runNode(cmd *cobra.Command, args []string) {
 	}
 	if *polygonContract == "" {
 		logger.Fatal("Please specify --polygonContract")
+	}
+	if *oasisRPC == "" {
+		logger.Fatal("Please specify --oasisRPC")
+	}
+	if *oasisContract == "" {
+		logger.Fatal("Please specify --oasisContract")
 	}
 	if *nodeName == "" {
 		logger.Fatal("Please specify --nodeName")
@@ -396,6 +410,7 @@ func runNode(cmd *cobra.Command, args []string) {
 	ethContractAddr := eth_common.HexToAddress(*ethContract)
 	bscContractAddr := eth_common.HexToAddress(*bscContract)
 	polygonContractAddr := eth_common.HexToAddress(*polygonContract)
+	oasisContractAddr := eth_common.HexToAddress(*oasisContract)
 	solAddress, err := solana_types.PublicKeyFromBase58(*solanaContract)
 	if err != nil {
 		logger.Fatal("invalid Solana contract address", zap.Error(err))
@@ -489,7 +504,6 @@ func runNode(cmd *cobra.Command, args []string) {
 	attestationEvents := reporter.EventListener(logger)
 
 	publicrpcService, publicrpcServer, err := publicrpcServiceRunnable(logger, *publicRPC, db, gst)
-
 	if err != nil {
 		log.Fatal("failed to create publicrpc service socket", zap.Error(err))
 	}
@@ -525,6 +539,11 @@ func runNode(cmd *cobra.Command, args []string) {
 
 		if err := supervisor.Run(ctx, "polygonwatch",
 			ethereum.NewEthWatcher(*polygonRPC, polygonContractAddr, "polygon", common.ReadinessPolygonSyncing, vaa.ChainIDPolygon, lockC, nil).Run); err != nil {
+			return err
+		}
+
+		if err := supervisor.Run(ctx, "oasiswatch",
+			ethereum.NewEthWatcher(*oasisRPC, oasisContractAddr, "oasis", common.ReadinessOasisSyncing, vaa.ChainIDOasis, lockC, nil).Run); err != nil {
 			return err
 		}
 
